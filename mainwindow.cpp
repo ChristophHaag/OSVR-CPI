@@ -352,6 +352,7 @@ void MainWindow::atmel_launch()
 
 QString MainWindow::findSerialPort(int VID, int PID)
 {
+#ifdef _WIN32
     QString outputString = "";
 
     const QString blankString = QObject::tr("N/A");
@@ -389,6 +390,21 @@ QString MainWindow::findSerialPort(int VID, int PID)
     if (m_verbose)
         msgBox.exec();
     return portName;
+#else //TODO: Mac OS X
+    //TODO: check all available serial ports
+    QString filename = "/dev/ttyACM0";
+    QFile f(filename);
+    if (f.exists()) {
+        QFileInfo fi(f);
+        if (fi.isWritable()) {
+            return filename;
+        } else {
+            qWarning() << filename + " exists but is not writable";
+        }
+    } else {
+        return "Not Found";
+    }
+#endif
 }
 
 QSerialPort *MainWindow::openSerialPort(QString portName)
@@ -404,8 +420,7 @@ QSerialPort *MainWindow::openSerialPort(QString portName)
     if (thePort->open(QIODevice::ReadWrite)) {
         return thePort;
     } else {
-        if (m_verbose)
-            QMessageBox::critical(this,tr("Open port fail"),"Cannot open serial port " + portName + ".\n Please check your connections and try again.\n");
+        QMessageBox::critical(this,tr("Open port fail"),"Cannot open serial port " + portName + ".\n Please check your connections and try again.\n");
         return NULL;
     }
 }
@@ -413,49 +428,52 @@ QSerialPort *MainWindow::openSerialPort(QString portName)
 void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 {
     if (thePort->write(data)== -1){
-        if (m_verbose)
-            QMessageBox::critical(this,tr("Write serial port failure"),"Cannot write to serial port.\n Please check your connections and try again.\n");
+        QMessageBox::critical(this,tr("Write serial port failure"),"Cannot write to serial port.\n Please check your connections and try again.\n");
     }
     thePort->flush();
+#ifdef _WIN32
+    // TODO: Find out why this doesn't work on Linux
     thePort->waitForBytesWritten(5000);
+#endif
     QThread::sleep(1);
+}
+
+QSerialPort* MainWindow::findAndOpenSerialPort() {
+    // find the OSVR HDK and get current FW version
+    QString portName = MainWindow::findSerialPort(0x1532, 0x0B00);
+    if (portName != "Not found"){
+        QSerialPort *thePort = openSerialPort(portName);
+        return thePort;
+    } else {
+        qWarning() << "Serial Port 0x1532, 0x0B00 not found";
+    }
+    return NULL;
 }
 
 QString MainWindow::sendCommandWaitForResults(QByteArray theCommand){
     QByteArray theResult="";
     QSerialPort *thePort;
-    QString portName;
-
-    // find the OSVR HDK and get current FW version
-    portName = findSerialPort(0x1532, 0x0B00);
-    if (portName != "Not found"){
-        thePort = openSerialPort(portName);
-        if (thePort){
-            writeSerialData(thePort,theCommand);
-            if (thePort->waitForReadyRead(5000)){
-                theResult = thePort->readAll();
-            }
-            thePort->close();
+    thePort = findAndOpenSerialPort();
+    if (thePort){
+        writeSerialData(thePort,theCommand);
+        if (thePort->waitForReadyRead(5000)){
+            theResult = thePort->readAll();
         }
-    }else{
-        if (m_verbose)
-           QMessageBox::critical(this,tr("Alert"),"Could not retrieve results from " + theCommand + ". Check your connections and try again.");
+        thePort->close();
+    } else {
+        QMessageBox::critical(this,tr("Alert"),"Could not retrieve results from " + theCommand + ". Check your connections and try again.");
     }
     return theResult;
 }
 
 void MainWindow::sendCommandNoResult(QByteArray theCommand){
     QSerialPort *thePort;
-    QString portName;
-
-    // find the OSVR HDK and get current FW version
-    portName = findSerialPort(0x1532, 0x0B00);
-    if (portName != "Not found"){
-        thePort = openSerialPort(portName);
-        if (thePort){
-            writeSerialData(thePort,theCommand);
-        }
+    thePort = findAndOpenSerialPort();
+    if (thePort){
+        writeSerialData(thePort,theCommand);
         thePort->close();
+    }else{
+        QMessageBox::critical(this,tr("Alert"),"Could not retrieve results from " + theCommand + ". Check your connections and try again.");
     }
 }
 

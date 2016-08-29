@@ -58,6 +58,7 @@ private slots:
     QSerialPort *openSerialPort(QString);
     void writeSerialData(QSerialPort *thePort, const QByteArray &);
 
+    QSerialPort* findAndOpenSerialPort();
     void sendCommandNoResult(QByteArray);
     QString sendCommandWaitForResults(QByteArray);
 
