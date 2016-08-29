@@ -96,8 +96,17 @@ MainWindow::MainWindow(QWidget *parent) :
     QProcess process;
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString programPath = "";
+#ifdef _WIN32
+    qInfo() << "Running on Windows";
     programPath = env.value("PROGRAMDATA","C:/ProgramData");
     m_osvrUserConfigFilename = QString(programPath+"/OSVR/osvr_user_settings.json");
+#else // TODO: Mac OS X
+    qInfo() << "Running on Linux";
+    QString username = env.value("USER");
+    programPath = env.value("XDG_CONFIG_HOME","/home/"+username+"/.config");
+    m_osvrUserConfigFilename = QString(programPath+"/osvr_user_settings.json");
+#endif
+    qInfo() << "Using config file: " << m_osvrUserConfigFilename;
     loadConfigFile(m_osvrUserConfigFilename);
 }
 
