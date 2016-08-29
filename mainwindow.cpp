@@ -102,6 +102,11 @@ MainWindow::MainWindow(QWidget *parent) :
     m_osvrUserConfigFilename = QString(programPath+"/OSVR/osvr_user_settings.json");
 #else // TODO: Mac OS X
     qInfo() << "Running on Linux";
+
+    ui->enableButton->setEnabled(false);
+    ui->disableButton->setEnabled(false);
+    ui->updateFWButton->setEnabled(false); // TODO: implement
+
     QString username = env.value("USER");
     programPath = env.value("XDG_CONFIG_HOME","/home/"+username+"/.config");
     m_osvrUserConfigFilename = QString(programPath+"/osvr_user_settings.json");
