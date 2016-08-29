@@ -30,24 +30,18 @@
 #include <fstream>
 
 // set up for file watching
-//#using <system.dll>
-#include <Windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <tchar.h>
-
-#include "stdafx.h"     // Comment this off if pre-compiled header is not required.
 
 #include "../osvruser.h"
-#include "FileWatcherImpl.h"
 
 struct Constants{
-	static wstring config_file;
-	static wstring config_path;
+	static string config_file;
+	static string config_path;
 };
 
-wstring Constants::config_file = L"osvr_user_settings.json";
-wstring Constants::config_path = L"C:/ProgramData/OSVR/";
+string Constants::config_file = "osvr_user_settings.json";
+string Constants::config_path = "C:/ProgramData/OSVR/";
 
 
 // Anonymous namespace to avoid symbol collision
@@ -58,17 +52,28 @@ class AnalogSyncDevice {
     AnalogSyncDevice(OSVR_PluginRegContext ctx) : m_myVal(0) {
 
 		// This prints the environment variable value
+#ifdef _WIN32
+        //TODO: fix windows part
 		TCHAR Variable[MAX_PATH];
 		GetEnvironmentVariable(_T("PROGRAMDATA"), Variable, MAX_PATH);
 		Constants::config_path = Variable;
 		Constants::config_path += +L"\\OSVR\\";
 
 		wstring ss = Constants::config_path + Constants::config_file;
+#else
+                Constants::config_path = std::getenv("XDG_CONFIG_HOME");
+                if (Constants::config_path == "") {
+                    string username = std::getenv("USER");
+                    Constants::config_path = "/home/" + username + "/.config";
+                }
+                string ss = Constants::config_path + Constants::config_file;
+#endif
 
 		readConfigFile(ss);
 
-		long Result = m_FileWatcher.WatchFilePath(ss.c_str(),&m_fileChange);
-		if (Result == ERROR_SUCCESS){
+                
+		long Result = 0; //m_FileWatcher.addPath(path);
+		if (Result == 0){
 			std::cout << "UserSettings: file watch on " << string(ss.begin(),ss.end()) << " setup." << std::endl;
 		}
 		else{
@@ -92,7 +97,7 @@ class AnalogSyncDevice {
         m_dev.registerUpdateCallback(this);
 	};
 
-	void readConfigFile(wstring file_locator){
+	void readConfigFile(string file_locator){
 
 		std::ifstream file_id;
 		file_id.open(file_locator);
@@ -112,7 +117,7 @@ class AnalogSyncDevice {
 		}
 	};
 
-	void writeConfigFile(wstring file_locator){
+	void writeConfigFile(string file_locator){
 		// retreive Json string. should be just the default values.
 		Json::Value value;
 		m_osvrUser.write(value);
@@ -152,8 +157,6 @@ class AnalogSyncDevice {
 	OSVRUser m_osvrUser;
 	osvr::pluginkit::DeviceToken m_dev;
     OSVR_AnalogDeviceInterface m_analog;
-	CFileWatcherImpl m_FileWatcher;
-
 	double m_myVal;
 	bool m_initialized = false;
 };
