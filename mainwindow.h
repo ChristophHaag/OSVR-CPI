@@ -54,7 +54,6 @@ private slots:
     void on_updateFWButton_clicked();
     void on_checkFWButton_clicked();
 
-    QString findSerialPort(int,int);
     QSerialPort *openSerialPort(QString);
     void writeSerialData(QSerialPort *thePort, const QByteArray &);
 

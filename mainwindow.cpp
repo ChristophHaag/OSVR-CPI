@@ -361,62 +361,6 @@ void MainWindow::atmel_launch()
 }
 
 
-QString MainWindow::findSerialPort(int VID, int PID)
-{
-#ifdef _WIN32
-    QString outputString = "";
-
-    const QString blankString = QObject::tr("N/A");
-    QString description;
-    QString manufacturer;
-    QString serialNumber;
-    QString portName;
-    bool deviceFound = false;
-
-   portName = NOTFOUNDSTR;
-    foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
-        if (info.vendorIdentifier()==VID && info.productIdentifier()==PID){
-            description = info.description();
-            manufacturer = info.manufacturer();
-            serialNumber = info.serialNumber();
-            outputString += "\n";
-            outputString += QObject::tr("Port: ") + info.portName() + "\n"
-                    + QObject::tr("Location: ") + info.systemLocation() + "\n"
-                    + QObject::tr("Description: ") + info.description() + "\n"
-                    + QObject::tr("Manufacturer: ") + info.manufacturer() + "\n"
-                    + QObject::tr("Serial number: ") + info.serialNumber() + "\n"
-                    + QObject::tr("Vendor Identifier: ") + (info.hasVendorIdentifier() ? QString::number(info.vendorIdentifier(), 16) : QString()) + "\n"
-                    + QObject::tr("Product Identifier: ") + (info.hasProductIdentifier() ? QString::number(info.productIdentifier(), 16) : QString()) + "\n"
-                    + QObject::tr("Busy: ") + (info.isBusy() ? QObject::tr("Yes") : QObject::tr("No")) + "\n";
-            deviceFound = true;
-            portName = info.portName();
-         }
-    }
-    QMessageBox msgBox;
-    if (deviceFound){
-        msgBox.setText("COM port: "+ outputString);
-    }else{
-        msgBox.setText("Could not find device");
-    }
-    if (m_verbose)
-        msgBox.exec();
-    return portName;
-#else //TODO: Mac OS X
-    //TODO: check all available serial ports
-    QString filename = "/dev/ttyACM0";
-    QFile f(filename);
-    if (f.exists()) {
-        QFileInfo fi(f);
-        if (fi.isWritable()) {
-            return filename;
-        } else {
-            qWarning() << filename + " exists but is not writable";
-        }
-    } else {
-        return "Not Found";
-    }
-#endif
-}
 
 QSerialPort *MainWindow::openSerialPort(QString portName)
 {
