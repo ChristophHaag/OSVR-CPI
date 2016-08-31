@@ -34,6 +34,10 @@
 #include <QDir>
 #include <QtSerialPort>
 
+#include <osvr/USBSerial/USBSerialEnum.h>
+#include <osvr/USBSerial/USBSerialDevice.h>
+#include <ios>
+
 #include "json/json.h"
 
 // Helper function for validating numerical input
@@ -444,8 +448,20 @@ void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 }
 
 QSerialPort* MainWindow::findAndOpenSerialPort() {
-    // find the OSVR HDK and get current FW version
-    QString portName = MainWindow::findSerialPort(0x1532, 0x0B00);
+    QString portName = QString("Not found");
+    for (auto &&dev : osvr::usbserial::enumerate()) {
+        if (m_verbose) {
+            std::cout << "Checking serial device " << hex << dev.getVID() << ":" << hex << dev.getPID() <<
+            " -> " << dev.getPlatformSpecificPath() << std::endl;
+        }
+
+        if (dev.getVID() == 0x1532 && dev.getPID() == 0x0B00) {
+            if (m_verbose) {
+                std::cout << "Found serial device: " << dev.getPlatformSpecificPath() << std::endl;
+            }
+            portName = QString::fromStdString(dev.getPlatformSpecificPath());
+        }
+    }
     if (portName != "Not found"){
         QSerialPort *thePort = openSerialPort(portName);
         return thePort;

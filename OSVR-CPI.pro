@@ -35,6 +35,8 @@ HEADERS  += mainwindow.h \
     lib_json/json_tool.h \
     version.h
 
+LIBS += -losvrUSBSerial
+
 FORMS    += mainwindow.ui
 
 DISTFILES += \
