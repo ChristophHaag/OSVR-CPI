@@ -34,6 +34,10 @@
 #include <stdio.h>
 
 #include "../osvruser.h"
+#include <QObject>
+#include <QtCore>
+#include <QFileSystemWatcher>
+#include <thread>
 
 struct Constants{
 	static string config_file;
@@ -47,6 +51,27 @@ string Constants::config_path = "C:/ProgramData/OSVR/";
 // Anonymous namespace to avoid symbol collision
 namespace {
 
+
+class FileWatcher : public QObject {
+Q_OBJECT
+
+public:
+    QFileSystemWatcher watcher;
+    FileWatcher(std::string file) {
+        QString path = QString::fromStdString(file);
+        qInfo() << "Watching " + path;
+        watcher.addPath(path);
+
+        connect(&watcher, SIGNAL(fileChanged(const QString &)), SIGNAL(handleFileChanged(const QString &)), Qt::QueuedConnection);
+        qInfo() << "Connected watcher with handleFileChanged()";
+    }
+public slots:
+    void handleFileChanged(const QString& foo) {
+        std::cout << "File changed: " << foo.toStdString() << std::endl;
+    }
+signals:
+    void fileChanged(const QString &path);
+};
 class AnalogSyncDevice {
   public:
     AnalogSyncDevice(OSVR_PluginRegContext ctx) : m_myVal(0) {
@@ -61,17 +86,28 @@ class AnalogSyncDevice {
 
 		wstring ss = Constants::config_path + Constants::config_file;
 #else
-                Constants::config_path = std::getenv("XDG_CONFIG_HOME");
-                if (Constants::config_path == "") {
+                char* xdgconf = std::getenv("XDG_CONFIG_HOME");
+                
+                if (xdgconf) {
+                    Constants::config_path = std::string(xdgconf);
+                } else {
                     string username = std::getenv("USER");
                     Constants::config_path = "/home/" + username + "/.config";
                 }
-                string ss = Constants::config_path + Constants::config_file;
+                string ss = Constants::config_path + "/" +  Constants::config_file;
 #endif
 
 		readConfigFile(ss);
-
                 
+                std::thread qtthread([ss]{
+                    int argc = 0;
+                    char** args = nullptr;
+                    QCoreApplication app(argc, args);
+                    FileWatcher fw(ss);
+                    app.exec();
+                });
+
+
 		long Result = 0; //m_FileWatcher.addPath(path);
 		if (Result == 0){
 			std::cout << "UserSettings: file watch on " << string(ss.begin(),ss.end()) << " setup." << std::endl;

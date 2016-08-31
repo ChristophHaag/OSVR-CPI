@@ -7,16 +7,18 @@ project(UserSettingsPlugin) # Change this line.
 # C:/Users/Ryan/Downloads/OSVR-Core-Snapshot-v0.1-406-gaa55515-build54-vs12-32bit
 # in the CMake GUI or command line.
 find_package(osvr)
+find_package(Qt5Core)
 # This generates a header file, from the named json file, containing a string literal
 # named com_osvr_example_selfcontainedDetectAndCreate_json (not null terminated)
 # The file must be added as a source file to some target (as below) to be generated.
 osvr_convert_json(com_osvr_user_settings_json
     com_osvr_user_settings.json
     "${CMAKE_CURRENT_BINARY_DIR}/com_osvr_user_settings_json.h"
-	)
+)
 
 # Be able to find our generated header file.
 include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/..")
+
 
 # This is just a helper function wrapping CMake's add_library command that
 # sets up include dirs, libraries, and naming convention (no leading "lib")
@@ -36,4 +38,4 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/.
     "${CMAKE_CURRENT_BINARY_DIR}/com_osvr_user_settings_json.h")
 
 # If you use other libraries, find them and add a line like:
-target_link_libraries(com_osvr_user_settings jsoncpp)
+target_link_libraries(com_osvr_user_settings jsoncpp Qt5::Core)
