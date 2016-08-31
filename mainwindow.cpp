@@ -40,6 +40,8 @@
 
 #include "json/json.h"
 
+#define NOTFOUNDSTR "Not found"
+
 // Helper function for validating numerical input
 class myValidator : public QDoubleValidator
 {
@@ -371,7 +373,7 @@ QString MainWindow::findSerialPort(int VID, int PID)
     QString portName;
     bool deviceFound = false;
 
-   portName = "Not found";
+   portName = NOTFOUNDSTR;
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
         if (info.vendorIdentifier()==VID && info.productIdentifier()==PID){
             description = info.description();
@@ -448,7 +450,7 @@ void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 }
 
 QSerialPort* MainWindow::findAndOpenSerialPort() {
-    QString portName = QString("Not found");
+    QString portName = QString(NOTFOUNDSTR);
     for (auto &&dev : osvr::usbserial::enumerate()) {
         if (m_verbose) {
             std::cout << "Checking serial device " << hex << dev.getVID() << ":" << hex << dev.getPID() <<
@@ -462,7 +464,7 @@ QSerialPort* MainWindow::findAndOpenSerialPort() {
             portName = QString::fromStdString(dev.getPlatformSpecificPath());
         }
     }
-    if (portName != "Not found"){
+    if (portName != NOTFOUNDSTR){
         QSerialPort *thePort = openSerialPort(portName);
         return thePort;
     } else {
