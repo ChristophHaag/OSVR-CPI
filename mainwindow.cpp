@@ -395,6 +395,7 @@ void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 
 QSerialPort* MainWindow::findAndOpenSerialPort() {
     QString portName = QString(NOTFOUNDSTR);
+    int hdkcount = 0;
     for (auto &&dev : osvr::usbserial::enumerate()) {
         if (m_verbose) {
             std::cout << "Checking serial device " << hex << dev.getVID() << ":" << hex << dev.getPID() <<
@@ -405,8 +406,15 @@ QSerialPort* MainWindow::findAndOpenSerialPort() {
             if (m_verbose) {
                 std::cout << "Found serial device: " << dev.getPlatformSpecificPath() << std::endl;
             }
+            hdkcount++;
             portName = QString::fromStdString(dev.getPlatformSpecificPath());
         }
+    }
+    if (hdkcount > 1) {
+        std::string msg = std::to_string(hdkcount) + " HDKs have been found. \
+This application will only use the first connected one \
+at serial port " + portName.toStdString();
+        QMessageBox::critical(this,tr("Alert"), msg.c_str());
     }
     if (portName != NOTFOUNDSTR){
         QSerialPort *thePort = openSerialPort(portName);
