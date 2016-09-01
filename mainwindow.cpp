@@ -37,6 +37,7 @@
 #include <osvr/USBSerial/USBSerialEnum.h>
 #include <osvr/USBSerial/USBSerialDevice.h>
 #include <ios>
+#include <iterator>
 
 #include "json/json.h"
 
@@ -402,27 +403,22 @@ void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 
 QSerialPort* MainWindow::findAndOpenSerialPort() {
     QString portName = QString(NOTFOUNDSTR);
-    int hdkcount = 0;
-    for (auto &&dev : osvr::usbserial::enumerate()) {
-        if (m_verbose) {
-            std::cout << "Checking serial device " << hex << dev.getVID() << ":" << hex << dev.getPID() <<
-            " -> " << dev.getPlatformSpecificPath() << std::endl;
-        }
+    auto devs = osvr::usbserial::enumerate(0x1532, 0x0B00);
 
-        if (dev.getVID() == 0x1532 && dev.getPID() == 0x0B00) {
-            if (m_verbose) {
-                std::cout << "Found serial device: " << dev.getPlatformSpecificPath() << std::endl;
-            }
-            hdkcount++;
-            portName = QString::fromStdString(dev.getPlatformSpecificPath());
-        }
-    }
+    int hdkcount = 0;
+    for (auto &&dev : devs) hdkcount++;
     if (hdkcount > 1) {
         std::string msg = std::to_string(hdkcount) + " HDKs have been found. \
 This application will only use the first connected one \
 at serial port " + portName.toStdString();
         QMessageBox::critical(this,tr("Alert"), msg.c_str());
     }
+
+    auto &&dev = *(devs.begin());
+    if (m_verbose) {
+        std::cout << "Found serial device: " << dev.getPlatformSpecificPath() << std::endl;
+    }
+    portName = QString::fromStdString(dev.getPlatformSpecificPath());
     if (portName != NOTFOUNDSTR){
         QSerialPort *thePort = openSerialPort(portName);
         return thePort;
