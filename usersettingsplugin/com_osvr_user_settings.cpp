@@ -28,10 +28,12 @@
 // Standard includes
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 // set up for file watching
 #include <stdlib.h>
 #include <stdio.h>
+#include <libfswatch/c++/monitor.hpp>
 
 #include "../osvruser.h"
 
@@ -45,6 +47,7 @@ string Constants::config_path = "C:/ProgramData/OSVR/";
 
 // namespace to avoid symbol collision
 namespace usersettingsplugin {
+void filewatcher_cb(const std::vector<fsw::event>& events, void *data);
 class AnalogSyncDevice {
   public:
     AnalogSyncDevice(OSVR_PluginRegContext ctx) : m_myVal(0) {
@@ -71,8 +74,10 @@ class AnalogSyncDevice {
 #endif
 
 		readConfigFile(ss);
-
-                
+                std::vector<std::string> files;
+                files.push_back(ss);
+                active_monitor = fsw::monitor_factory::create_monitor(fsw_monitor_type::system_default_monitor_type, files, &filewatcher_cb);
+                active_monitor->start();
 		long Result = 0; //m_FileWatcher.addPath(path);
 		if (Result == 0){
 			std::cout << "UserSettings: file watch on " << string(ss.begin(),ss.end()) << " setup." << std::endl;
@@ -158,9 +163,29 @@ class AnalogSyncDevice {
 	OSVRUser m_osvrUser;
 	osvr::pluginkit::DeviceToken m_dev;
     OSVR_AnalogDeviceInterface m_analog;
+    fsw::monitor *active_monitor;
 	double m_myVal;
 	bool m_initialized = false;
+
 };
+
+//TODO: Get this into the AnalogSyncDevice class
+AnalogSyncDevice *asd = NULL;
+void filewatcher_cb(const std::vector<fsw::event>& events,
+                                      void *data) {
+    //std::cout << "Callback" << std::endl;
+    for (fsw::event e : events) {
+        
+        if (e.get_path() != "" /*whyever this happens*/ && e.get_event_flag_by_name("Updated")) { //TODO: Does it work this way?
+            std::cout << e.get_path() << " changed..." << std::endl;
+            if (asd != NULL) {
+                asd->update();
+            }
+        } else {
+            //std::cout << "foo" << std::endl;
+        }
+    }
+}
 
 class HardwareDetection {
   public:
@@ -173,8 +198,9 @@ class HardwareDetection {
             m_found = true;
 
             /// Create our device object
+            asd = new AnalogSyncDevice(ctx);
             osvr::pluginkit::registerObjectForDeletion(
-                ctx, new AnalogSyncDevice(ctx));
+                ctx, asd);
         }
         return OSVR_RETURN_SUCCESS;
     }

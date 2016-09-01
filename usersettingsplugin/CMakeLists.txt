@@ -36,4 +36,4 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/.
     "${CMAKE_CURRENT_BINARY_DIR}/com_osvr_user_settings_json.h")
 
 # If you use other libraries, find them and add a line like:
-target_link_libraries(com_osvr_user_settings jsoncpp)
+target_link_libraries(com_osvr_user_settings jsoncpp fswatch)
