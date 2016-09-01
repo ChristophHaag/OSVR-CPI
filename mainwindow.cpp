@@ -332,16 +332,13 @@ void MainWindow::on_updateFWButton_clicked()
 
 void MainWindow::on_checkFWButton_clicked()
 {
-    QMessageBox msgBox;
-
     // get FW version
     QString fwVersion = sendCommandWaitForResults("#?v\n");
-    if (fwVersion ==  ""){
-        fwVersion = "Error: Cannot read FW version.";
+    if (fwVersion !=  ""){
+        QMessageBox msgBox;
+        msgBox.setText("FW Version: " + fwVersion);
+        msgBox.exec();
     }
-    msgBox.setText("FW Version: " + fwVersion);
-    msgBox.exec();
-    return;
 }
 
 void MainWindow::atmel_erase()
@@ -402,30 +399,28 @@ void MainWindow::writeSerialData(QSerialPort *thePort, const QByteArray &data)
 }
 
 QSerialPort* MainWindow::findAndOpenSerialPort() {
-    QString portName = QString(NOTFOUNDSTR);
     auto devs = osvr::usbserial::enumerate(0x1532, 0x0B00);
 
     int hdkcount = 0;
     for (auto &&dev : devs) hdkcount++;
+    if (hdkcount == 0) { // callers need to handle this
+        return NULL;
+    }
+
+    auto &&dev = *(devs.begin());
+    QString portName = QString::fromStdString(dev.getPlatformSpecificPath());
+    if (m_verbose) {
+        std::cout << "Found serial device: " << portName.toStdString() << std::endl;
+    }
+
     if (hdkcount > 1) {
         std::string msg = std::to_string(hdkcount) + " HDKs have been found. \
 This application will only use the first connected one \
 at serial port " + portName.toStdString();
         QMessageBox::critical(this,tr("Alert"), msg.c_str());
     }
-
-    auto &&dev = *(devs.begin());
-    if (m_verbose) {
-        std::cout << "Found serial device: " << dev.getPlatformSpecificPath() << std::endl;
-    }
-    portName = QString::fromStdString(dev.getPlatformSpecificPath());
-    if (portName != NOTFOUNDSTR){
-        QSerialPort *thePort = openSerialPort(portName);
-        return thePort;
-    } else {
-        qWarning() << "Serial Port 0x1532, 0x0B00 not found";
-    }
-    return NULL;
+    QSerialPort *thePort = openSerialPort(portName);
+    return thePort;
 }
 
 QString MainWindow::sendCommandWaitForResults(QByteArray theCommand){
