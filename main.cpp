@@ -17,13 +17,21 @@
 
 #include "mainwindow.h"
 #include <QApplication>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
+    bool verbose = false;
+    for(int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--verbose") == 0 || strcmp(argv[i], "-v") == 0) {
+            std::cout << "Enabling verbose mode" << std::endl;
+            verbose = true;
+        }
+    }
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling); // DPI support
 
     QApplication a(argc, argv);
-    MainWindow w;
+    MainWindow w(verbose);
     w.show();
 
     return a.exec();

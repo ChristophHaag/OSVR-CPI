@@ -32,7 +32,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(bool verbose = false, QWidget *parent = 0);
     ~MainWindow();
 
 private slots:

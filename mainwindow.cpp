@@ -77,10 +77,11 @@ class myValidator : public QDoubleValidator
     }
 };
 
-MainWindow::MainWindow(QWidget *parent) :
+MainWindow::MainWindow(bool verbose, QWidget* parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    m_verbose = verbose;
     ui->setupUi(this);
 
     ui->standingHeight->setValidator( new myValidator(0, 300, 2, this) );
@@ -103,11 +104,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     QString programPath = "";
 #ifdef _WIN32
-    qInfo() << "Running on Windows";
+    if (m_verbose) {
+        qInfo() << "Running on Windows";
+    }
     programPath = env.value("PROGRAMDATA","C:/ProgramData");
     m_osvrUserConfigFilename = QString(programPath+"/OSVR/osvr_user_settings.json");
 #else // TODO: Mac OS X
-    qInfo() << "Running on Linux";
+    if (m_verbose) {
+        qInfo() << "Running on Linux";
+    }
 
     ui->enableButton->setEnabled(false);
     ui->disableButton->setEnabled(false);
@@ -117,7 +122,9 @@ MainWindow::MainWindow(QWidget *parent) :
     programPath = env.value("XDG_CONFIG_HOME","/home/"+username+"/.config");
     m_osvrUserConfigFilename = QString(programPath+"/osvr_user_settings.json");
 #endif
-    qInfo() << "Using config file: " << m_osvrUserConfigFilename;
+    if (m_verbose) {
+        qInfo() << "Using config file: " << m_osvrUserConfigFilename;
+    }
     loadConfigFile(m_osvrUserConfigFilename);
 }
 
