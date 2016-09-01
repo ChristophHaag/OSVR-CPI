@@ -43,10 +43,8 @@ struct Constants{
 string Constants::config_file = "osvr_user_settings.json";
 string Constants::config_path = "C:/ProgramData/OSVR/";
 
-
-// Anonymous namespace to avoid symbol collision
-namespace {
-
+// namespace to avoid symbol collision
+namespace usersettingsplugin {
 class AnalogSyncDevice {
   public:
     AnalogSyncDevice(OSVR_PluginRegContext ctx) : m_myVal(0) {
@@ -61,12 +59,15 @@ class AnalogSyncDevice {
 
 		wstring ss = Constants::config_path + Constants::config_file;
 #else
-                Constants::config_path = std::getenv("XDG_CONFIG_HOME");
-                if (Constants::config_path == "") {
+                char* xdgpath = std::getenv("XDG_CONFIG_HOME");
+                if (xdgpath) {
+                    Constants::config_path = std::string(xdgpath);
+                } else {
                     string username = std::getenv("USER");
                     Constants::config_path = "/home/" + username + "/.config";
                 }
-                string ss = Constants::config_path + Constants::config_file;
+                string ss = Constants::config_path + "/" + Constants::config_file;
+                std::cout << "UserSettings: Using config file " << ss << std::endl;
 #endif
 
 		readConfigFile(ss);
@@ -189,7 +190,7 @@ OSVR_PLUGIN(com_osvr_user_settings) {
     osvr::pluginkit::PluginContext context(ctx);
 
     /// Register a detection callback function object.
-    context.registerHardwareDetectCallback(new HardwareDetection());
+    context.registerHardwareDetectCallback(new usersettingsplugin::HardwareDetection());
 
 	/// Set up a file change notify to trigger re-reading of file
 //	Watcher::run();
